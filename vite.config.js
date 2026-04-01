@@ -7,6 +7,15 @@ export default defineConfig({
     port: 5173,
     open: true,
     cors: true,
+
+    // ✅ Optional but recommended (clean API calls)
+    proxy: {
+      "/api": {
+        target: "https://train-booking-app-5.onrender.com",
+        changeOrigin: true,
+        secure: true,
+      }
+    }
   },
   build: {
     target: 'esnext',
