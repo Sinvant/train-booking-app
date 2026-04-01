@@ -11,7 +11,14 @@ dotenv.config();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://Sinvant:qwerty1234@cluster0.bswwad4.mongodb.net/?appName=Cluster0";
+
+// ✅ FIXED: Only use env variable
+if (!process.env.MONGO_URI) {
+  console.error("MONGO_URI missing");
+  process.exit(1);
+}
+
+const MONGO_URI = process.env.MONGO_URI;
 
 app.use(cors());
 app.use(express.json());
@@ -108,7 +115,8 @@ const normalizeTrain = (train) => {
   };
 };
 
-const createToken = () => `token-${crypto.randomBytes(24).toString("hex")}`;
+const createToken = () =>
+  `token-${crypto.randomBytes(24).toString("hex")}`;
 
 const requireAuth = async (req, res, next) => {
   const authorizationHeader = req.headers.authorization || "";
@@ -129,11 +137,16 @@ const requireAuth = async (req, res, next) => {
 
 const connectAndSeed = async () => {
   await mongoose.connect(MONGO_URI);
-  console.log(`MongoDB connected: ${MONGO_URI}`);
+  console.log("MongoDB connected");
 
   for (const train of seedTrains) {
-    await Train.updateOne({ trainNo: train.trainNo }, { $setOnInsert: train }, { upsert: true });
+    await Train.updateOne(
+      { trainNo: train.trainNo },
+      { $setOnInsert: train },
+      { upsert: true }
+    );
   }
+
   console.log(`Ensured seed trains: ${seedTrains.length}`);
 };
 
@@ -142,7 +155,9 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/test", (req, res) => {
-  res.json({ message: "Frontend successfully connected to backend." });
+  res.json({
+    message: "Frontend successfully connected to backend.",
+  });
 });
 
 app.get("/api/trains", async (req, res) => {
@@ -158,7 +173,8 @@ app.get("/api/trains/search", async (req, res) => {
 
   const query = {};
   if (sourceCodes.length) query.source = { $in: sourceCodes };
-  if (destinationCodes.length) query.destination = { $in: destinationCodes };
+  if (destinationCodes.length)
+    query.destination = { $in: destinationCodes };
 
   const trains = await Train.find(query).sort({ departure: 1 }).lean();
   res.json(trains.map(normalizeTrain));
@@ -179,13 +195,19 @@ app.get("/api/trains/:id", async (req, res) => {
 
 app.post("/api/auth/register", async (req, res) => {
   const { name, email, password } = req.body || {};
-  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
 
   if (!name || !normalizedEmail || !password) {
-    return res.status(400).json({ message: "Name, email and password are required." });
+    return res
+      .status(400)
+      .json({ message: "Name, email and password are required." });
   }
 
-  const existing = await User.findOne({ email: normalizedEmail }).lean();
+  const existing = await User.findOne({
+    email: normalizedEmail,
+  }).lean();
   if (existing) {
     return res.status(409).json({ message: "User already exists." });
   }
@@ -208,10 +230,14 @@ app.post("/api/auth/register", async (req, res) => {
 
 app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body || {};
-  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
 
   if (!normalizedEmail || !password) {
-    return res.status(400).json({ message: "Email and password are required." });
+    return res
+      .status(400)
+      .json({ message: "Email and password are required." });
   }
 
   const user = await User.findOne({ email: normalizedEmail });
@@ -238,7 +264,9 @@ app.post("/api/bookings", requireAuth, async (req, res) => {
   }
 
   if (!Array.isArray(seats) || seats.length === 0 || !date) {
-    return res.status(400).json({ message: "trainId, seats and date are required." });
+    return res
+      .status(400)
+      .json({ message: "trainId, seats and date are required." });
   }
 
   const train = await Train.findById(trainId).lean();
@@ -279,7 +307,11 @@ app.post("/api/bookings", requireAuth, async (req, res) => {
 });
 
 app.get("/api/bookings", requireAuth, async (req, res) => {
-  const bookings = await Booking.find({ userId: req.user._id }).sort({ createdAt: -1 }).lean();
+  const bookings = await Booking.find({
+    userId: req.user._id,
+  })
+    .sort({ createdAt: -1 })
+    .lean();
 
   res.json(
     bookings.map((booking) => ({
@@ -305,7 +337,11 @@ app.delete("/api/bookings/:id", requireAuth, async (req, res) => {
     return res.status(404).json({ message: "Booking not found." });
   }
 
-  const booking = await Booking.findOne({ _id: req.params.id, userId: req.user._id });
+  const booking = await Booking.findOne({
+    _id: req.params.id,
+    userId: req.user._id,
+  });
+
   if (!booking) {
     return res.status(404).json({ message: "Booking not found." });
   }
