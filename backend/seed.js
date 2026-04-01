@@ -1,7 +1,16 @@
 import mongoose from "mongoose";
+import dotenv from "dotenv";
 import Train from "./models/Train.js";
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/TRS";
+dotenv.config();
+
+// ✅ FIXED: only use env (same as your main backend)
+if (!process.env.MONGO_URI) {
+  console.error("MONGO_URI missing");
+  process.exit(1);
+}
+
+const MONGO_URI = process.env.MONGO_URI;
 
 const trains = [
   {
