@@ -4,8 +4,13 @@ import axios from "axios";
    AXIOS BASE CONFIG
 ========================= */
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+// ✅ Only use Vercel env (NO localhost fallback)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// ✅ Safety check
+if (!API_BASE_URL) {
+  throw new Error("VITE_API_BASE_URL is not defined");
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,
